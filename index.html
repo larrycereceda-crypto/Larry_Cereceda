@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Xtreme Mining</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <img id="logoImg" class="brand-logo" alt="Xtreme Mining">
+    <div class="brand-author">
+      <span class="author-name">Larry Cereceda Barrera</span>
+      <span class="author-title">Jefe de Operaciones</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <a class="nav-item active" data-tab="overview"   onclick="switchTab('overview')">  <i class="ni">◆</i> Resumen General</a>
+    <a class="nav-item"        data-tab="cuadrillas" onclick="switchTab('cuadrillas')"><i class="ni">◆</i> Cuadrillas</a>
+    <a class="nav-item"        data-tab="groups"     onclick="switchTab('groups')">    <i class="ni">◆</i> Grupos 1 – 4</a>
+    <a class="nav-item"        data-tab="support"    onclick="switchTab('support')">   <i class="ni">◆</i> Soporte / Admin</a>
+    <a class="nav-item"        data-tab="asistencia" onclick="switchTab('asistencia')"><i class="ni">◆</i> Asistencia</a>
+    <a class="nav-item"        data-tab="vacantes"   onclick="switchTab('vacantes')">  <i class="ni">◆</i> Vacantes</a>
+    <a class="nav-item"        data-tab="detalle"    onclick="switchTab('detalle')">   <i class="ni">◆</i> Detalle por Grupo</a>
+  </nav>
+  <div class="sidebar-status" id="statusBox">Cargando…</div>
+  <details class="sidebar-help">
+    <summary>📂 Actualizar datos día a día</summary>
+    <div class="help-body">
+      <p><strong>Proceso diario:</strong></p>
+      <ol>
+        <li>Reemplaza <code>Grilla 260126_Xtreme_Ultima.xlsx</code> (mismo nombre).</li>
+        <li>Renombra el informe a <code>Asistencia.xlsx</code> y reemplaza.</li>
+        <li>Recarga con <kbd>F5</kbd>.</li>
+      </ol>
+    </div>
+  </details>
+</aside>
+
+<!-- MAIN -->
+<div class="main-content">
+
+  <header class="top-header">
+    <div>
+      <h1>Dashboard Grilla Obra Reparaciones</h1>
+      <p class="subtitle">Hoja: MANO DE OBRA · Actualización automática desde Excel</p>
+    </div>
+    <div class="filters-inline">
+      <select id="filtroGrupo"></select>
+      <select id="filtroDept"></select>
+      <select id="filtroTurno"></select>
+      <input id="buscarTexto" type="text" placeholder="🔍 Nombre / cargo…">
+      <button id="btnLimpiar" class="btn-ghost">✕ Limpiar</button>
+    </div>
+  </header>
+
+  <!-- ══ RESUMEN GENERAL ══ -->
+  <section id="tab-overview" class="tab-content active">
+
+    <!-- Fila 1: KPIs principales -->
+    <div class="kpis-row">
+      <div class="kpi-card c-blue">  <span class="ki">👥</span><div class="kb"><span class="kl">Dotación Total</span>   <strong id="kpiTotal">0</strong><span class="ks">trabajadores</span></div></div>
+      <div class="kpi-card c-green"> <span class="ki">✅</span><div class="kb"><span class="kl">Acreditados</span>       <strong id="kpiAcred">0</strong><span class="ks" id="kpiAcredPct">–</span></div></div>
+      <div class="kpi-card c-yellow"><span class="ki">⏳</span><div class="kb"><span class="kl">En Proceso</span>        <strong id="kpiProc">0</strong> <span class="ks" id="kpiProcPct">–</span></div></div>
+      <div class="kpi-card c-red">   <span class="ki">🔴</span><div class="kb"><span class="kl">Vacantes</span>          <strong id="kpiVac">0</strong>  <span class="ks" id="kpiVacPct">–</span></div></div>
+      <div class="kpi-card c-sky">   <span class="ki">♂</span> <div class="kb"><span class="kl">Hombres</span>           <strong id="kpiHombres">0</strong><span class="ks" id="kpiHomPct">–</span></div></div>
+      <div class="kpi-card c-pink">  <span class="ki">♀</span> <div class="kb"><span class="kl">Mujeres</span>           <strong id="kpiMujeres">0</strong><span class="ks" id="kpiMujPct">–</span></div></div>
+      <div class="kpi-card c-teal">  <span class="ki">🤝</span><div class="kb"><span class="kl">Sindicato</span>         <strong id="kpiSind">0</strong>  <span class="ks">3 trabajadores</span></div></div>
+    </div>
+
+    <!-- Fila 2: KPIs por Grupo (Turno 1,2,3,4) con % cobertura -->
+    <h3 class="ssub" style="margin-bottom:10px">Cobertura por Grupo de Trabajo</h3>
+    <div class="kpis-row kpis-grupos">
+      <div class="kpi-card c-g1">
+        <span class="ki">①</span>
+        <div class="kb">
+          <span class="kl">GRUPO 1</span>
+          <strong id="kpiG1Pct">–</strong>
+          <span class="ks"><span id="kpiG1Acred">0</span> acred · <span id="kpiG1Vac">0</span> vac · <span id="kpiG1Tot">0</span> total</span>
+        </div>
+      </div>
+      <div class="kpi-card c-g2">
+        <span class="ki">②</span>
+        <div class="kb">
+          <span class="kl">GRUPO 2</span>
+          <strong id="kpiG2Pct">–</strong>
+          <span class="ks"><span id="kpiG2Acred">0</span> acred · <span id="kpiG2Vac">0</span> vac · <span id="kpiG2Tot">0</span> total</span>
+        </div>
+      </div>
+      <div class="kpi-card c-g3">
+        <span class="ki">③</span>
+        <div class="kb">
+          <span class="kl">GRUPO 3</span>
+          <strong id="kpiG3Pct">–</strong>
+          <span class="ks"><span id="kpiG3Acred">0</span> acred · <span id="kpiG3Vac">0</span> vac · <span id="kpiG3Tot">0</span> total</span>
+        </div>
+      </div>
+      <div class="kpi-card c-g4">
+        <span class="ki">④</span>
+        <div class="kb">
+          <span class="kl">GRUPO 4</span>
+          <strong id="kpiG4Pct">–</strong>
+          <span class="ks"><span id="kpiG4Acred">0</span> acred · <span id="kpiG4Vac">0</span> vac · <span id="kpiG4Tot">0</span> total</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gauges -->
+    <div class="gauge-row">
+      <div class="gauge-card"><p class="gauge-label">Cobertura General</p><div class="gw"><canvas id="gCobertura"></canvas><span class="gv" id="gvCobertura">–</span></div></div>
+      <div class="gauge-card"><p class="gauge-label">Grupos 1–4</p>       <div class="gw"><canvas id="gGrupos"></canvas>   <span class="gv" id="gvGrupos">–</span></div></div>
+      <div class="gauge-card"><p class="gauge-label">Soporte / Admin</p>  <div class="gw"><canvas id="gSoporte"></canvas>  <span class="gv" id="gvSoporte">–</span></div></div>
+      <div class="gauge-card"><p class="gauge-label">Cuadrillas</p>        <div class="gw"><canvas id="gCuad"></canvas>     <span class="gv" id="gvCuad">–</span></div></div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-4">
+      <div class="cpanel"><h3>Dotación por Grupo</h3>     <canvas id="cGrupo"></canvas></div>
+      <div class="cpanel"><h3>Estado Dotación</h3>        <canvas id="cEstado"></canvas></div>
+      <div class="cpanel"><h3>Distribución de Turno</h3>  <canvas id="cTurno"></canvas></div>
+      <div class="cpanel"><h3>Género (Mano de Obra)</h3>  <canvas id="cGenero"></canvas></div>
+    </div>
+  </section>
+
+  <!-- ══ CUADRILLAS ══ -->
+  <section id="tab-cuadrillas" class="tab-content">
+    <div class="panel">
+      <div class="sec-hdr">
+        <h2>Cuadrillas</h2>
+        <div class="fg">
+          <div class="df"><label>Grupo:</label>
+            <select id="cuadGrupoSel">
+              <option value="Todos">Todos</option>
+              <option value="GRUPO 1">GRUPO 1</option>
+              <option value="GRUPO 2">GRUPO 2</option>
+              <option value="GRUPO 3">GRUPO 3</option>
+              <option value="GRUPO 4">GRUPO 4</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="kmini-row">
+        <div class="km"><span class="kml">Total Cargos</span>   <strong id="cuadTotal">0</strong></div>
+        <div class="km"><span class="kml">Contratados (A)</span><strong class="c-green" id="cuadAcred">0</strong></div>
+        <div class="km"><span class="kml">En Proceso (P)</span> <strong class="c-yellow" id="cuadProc">0</strong></div>
+        <div class="km c-red"><span class="kml">Vacantes</span>  <strong id="cuadVac">0</strong></div>
+        <div class="km"><span class="kml">% Cobertura</span>    <strong class="c-green" id="cuadPct">–</strong></div>
+      </div>
+      <div class="charts-2">
+        <div class="cpanel"><h3>Trabajadores por Cargo</h3><canvas id="cCuadCargo"></canvas></div>
+        <div class="cpanel"><h3>Distribución por Turno</h3><canvas id="cCuadTurno"></canvas></div>
+      </div>
+      <h3 class="ssub">Resumen por Cuadrilla</h3>
+      <div class="cuad-grid" id="cuadGrid"></div>
+    </div>
+  </section>
+
+  <!-- ══ GRUPOS 1-4 ══ -->
+  <section id="tab-groups" class="tab-content">
+    <div class="panel">
+      <div class="sec-hdr">
+        <h2>Grupos 1 – 4</h2>
+        <small class="hint">Filtra con los controles del encabezado</small>
+      </div>
+      <div class="grupo-kpis" id="grupoKPIs"></div>
+      <div class="charts-2">
+        <div class="cpanel"><h3>Trabajadores por Cargo</h3><canvas id="cCargo14"></canvas></div>
+        <div class="cpanel"><h3>Distribución de Turno</h3> <canvas id="cTurno14"></canvas></div>
+      </div>
+      <h3 class="ssub">Detalle de Trabajadores</h3>
+      <table><thead><tr><th>Departamento</th><th>Cargo</th><th>Turno</th><th>Grupo</th><th>Nombre</th><th>Estado</th></tr></thead>
+      <tbody id="tGrupos14"></tbody></table>
+    </div>
+  </section>
+
+  <!-- ══ SOPORTE / ADMIN ══ -->
+  <section id="tab-support" class="tab-content">
+    <div class="panel">
+      <div class="sec-hdr">
+        <h2>Soporte / Administración · Filas 143–206</h2>
+        <div class="fg">
+          <div class="df"><label>Departamento:</label><select id="suppDept"></select></div>
+          <div class="df"><label>Turno:</label>
+            <select id="suppTurno">
+              <option value="Todos">Todos</option>
+              <option value="5X2">5X2</option>
+              <option value="7x7">7X7 A</option>
+              <option value="8x6">8X6 A</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="kmini-row">
+        <div class="km"><span class="kml">Total</span>        <strong id="suppTotal">0</strong></div>
+        <div class="km"><span class="kml">Acreditados</span>  <strong class="c-green" id="suppAcred">0</strong></div>
+        <div class="km"><span class="kml">En Proceso</span>   <strong class="c-yellow" id="suppProc">0</strong></div>
+        <div class="km c-red"><span class="kml">Vacantes</span><strong id="suppVac">0</strong></div>
+        <div class="km"><span class="kml">% Cobertura</span>  <strong class="c-green" id="suppPct">–</strong></div>
+      </div>
+      <div class="charts-2">
+        <div class="cpanel"><h3>Trabajadores por Cargo</h3><canvas id="cSuppCargo"></canvas></div>
+        <div class="cpanel"><h3>Por Turno</h3>            <canvas id="cSuppTurno"></canvas></div>
+      </div>
+      <h3 class="ssub">Detalle de Personal</h3>
+      <table><thead><tr><th>Departamento</th><th>Cargo</th><th>Turno</th><th>Nombre</th><th>Estado</th></tr></thead>
+      <tbody id="tSoporte"></tbody></table>
+    </div>
+  </section>
+
+  <!-- ══ ASISTENCIA ══ -->
+  <section id="tab-asistencia" class="tab-content">
+    <div class="panel">
+      <h2>Análisis de Asistencia <span class="fbadge" id="asistFecha">–</span></h2>
+
+      <!-- Filtros del resumen mensual -->
+      <div class="fg" style="margin-bottom:14px">
+        <div class="df"><label>Turno:</label>
+          <select id="asiTurnoFiltro">
+            <option value="Todos">Todos</option>
+            <option value="5X2">5X2</option>
+            <option value="7X7">7X7</option>
+            <option value="8X6">8X6</option>
+          </select>
+        </div>
+        <div class="df"><label>Grupo:</label>
+          <select id="asiGrupoFiltro">
+            <option value="Todos">Todos</option>
+            <option value="GRUPO 1">GRUPO 1</option>
+            <option value="GRUPO 2">GRUPO 2</option>
+            <option value="GRUPO 3">GRUPO 3</option>
+            <option value="GRUPO 4">GRUPO 4</option>
+            <option value="5X2">5X2</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Resumen mensual acumulado -->
+      <h3 class="ssub">Resumen mensual acumulado</h3>
+      <div class="kmini-row">
+        <div class="km">         <span class="kml">Total Registros</span>   <strong id="asiTotal">0</strong></div>
+        <div class="km c-green"> <span class="kml">Turno A trabajados</span><strong id="asiTurnoA">0</strong></div>
+        <div class="km c-sky">   <span class="kml">Turno B trabajados</span><strong id="asiTurnoB">0</strong></div>
+        <div class="km">         <span class="kml">Descansos</span>          <strong id="asiDescansos">0</strong></div>
+        <div class="km c-purple"><span class="kml">En LM (personas)</span>  <strong id="asiLM">0</strong></div>
+        <div class="km c-red">   <span class="kml">Fallas (personas)</span> <strong id="asiFallas">0</strong></div>
+        <div class="km c-teal">  <span class="kml">Sindicato (PS)</span>    <strong id="asiPS">0</strong></div>
+        <div class="km c-yellow"><span class="kml">Vacaciones</span>         <strong id="asiVac">0</strong></div>
+        <div class="km">         <span class="kml">IMM</span>               <strong id="asiIMM">0</strong></div>
+        <div class="km"><span class="kml">Días LM acumulados</span>         <strong id="asiDiasLM">0</strong></div>
+      </div>
+
+      <div class="charts-2">
+        <div class="cpanel"><h3>Asistencia mensual por Grupo</h3><canvas id="cAsiGrupo"></canvas></div>
+        <div class="cpanel"><h3>Distribución por Turno</h3>      <canvas id="cAsiTurno"></canvas></div>
+      </div>
+
+      <div class="grid2">
+        <div>
+          <h3 class="ssub">Personal en Licencia Médica</h3>
+          <table><thead><tr><th>Nombre</th><th>Cargo</th><th>Grupo</th><th>Días LM</th></tr></thead><tbody id="tAsiLM"></tbody></table>
+        </div>
+        <div>
+          <h3 class="ssub">Sindicato (PS) — Permiso Sindical</h3>
+          <table><thead><tr><th>Nombre</th><th>Cargo</th><th>Grupo</th><th>Días PS</th></tr></thead><tbody id="tAsiPS"></tbody></table>
+        </div>
+      </div>
+
+      <div class="grid2" style="margin-top:14px">
+        <div>
+          <h3 class="ssub">Fallas de Asistencia</h3>
+          <table><thead><tr><th>Nombre</th><th>Cargo</th><th>Grupo</th><th>Fallas</th></tr></thead><tbody id="tAsiFallas"></tbody></table>
+        </div>
+        <div>
+          <h3 class="ssub">Leyenda de códigos</h3>
+          <div class="legend-row">
+            <span class="leg leg-A">A — Turno día</span>
+            <span class="leg leg-B">B — Turno noche</span>
+            <span class="leg leg-D">D — Descanso</span>
+            <span class="leg leg-LM">LM — Licencia médica</span>
+            <span class="leg leg-F">F — Falla</span>
+            <span class="leg leg-V">V — Vacaciones</span>
+            <span class="leg leg-IMM">IMM — Contraindicación médica</span>
+            <span class="leg leg-PS">PS — Permiso sindical</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ VACANTES ══ -->
+  <section id="tab-vacantes" class="tab-content">
+    <div class="panel">
+      <div class="sec-hdr">
+        <h2>Análisis de Vacantes</h2>
+        <div class="fg">
+          <div class="df"><label>Cargo:</label><select id="vacCargo"></select></div>
+          <div class="df"><label>Grupo:</label>
+            <select id="vacGrupo">
+              <option value="Todos">Todos</option>
+              <option value="GRUPO 1">GRUPO 1</option>
+              <option value="GRUPO 2">GRUPO 2</option>
+              <option value="GRUPO 3">GRUPO 3</option>
+              <option value="GRUPO 4">GRUPO 4</option>
+              <option value="SOPORTE">Soporte/Admin</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="kmini-row">
+        <div class="km c-red"><span class="kml">Total Vacantes</span> <strong id="vacTotal">0</strong></div>
+        <div class="km"><span class="kml">Grupos 1–4</span>           <strong id="vacGrupos">0</strong></div>
+        <div class="km"><span class="kml">Soporte/Admin</span>        <strong id="vacSoporte">0</strong></div>
+        <div class="km"><span class="kml">Cargos Afectados</span>     <strong id="vacCargos">0</strong></div>
+      </div>
+      <div class="charts-2">
+        <div class="cpanel"><h3>Vacantes por Cargo</h3>        <canvas id="cVacCargo"></canvas></div>
+        <div class="cpanel"><h3>Vacantes por Departamento</h3> <canvas id="cVacDept"></canvas></div>
+      </div>
+      <h3 class="ssub">Listado de Vacantes</h3>
+      <table><thead><tr><th>Origen</th><th>Departamento</th><th>Cargo</th><th>Turno</th><th>Grupo</th><th>Tipo</th></tr></thead>
+      <tbody id="tVacantes"></tbody></table>
+    </div>
+  </section>
+
+  <!-- ══ DETALLE POR GRUPO ══ -->
+  <section id="tab-detalle" class="tab-content">
+    <div class="panel">
+      <div class="sec-hdr">
+        <h2>Detalle por Grupo</h2>
+        <div class="fg">
+          <div class="df"><label>Grupo:</label>
+            <select id="detGrupo">
+              <option value="GRUPO 1">GRUPO 1</option>
+              <option value="GRUPO 2">GRUPO 2</option>
+              <option value="GRUPO 3">GRUPO 3</option>
+              <option value="GRUPO 4">GRUPO 4</option>
+            </select>
+          </div>
+          <div class="df"><label>Cargo:</label><select id="detCargo"></select></div>
+        </div>
+      </div>
+      <div class="kmini-row" id="detKPIs"></div>
+      <table><thead><tr><th>Departamento</th><th>Cargo</th><th>Turno</th><th>Nombre</th><th>Estado</th></tr></thead>
+      <tbody id="tDetalle"></tbody></table>
+    </div>
+  </section>
+
+</div><!-- /main-content -->
+<script src="script.js"></script>
+</body>
+</html>
